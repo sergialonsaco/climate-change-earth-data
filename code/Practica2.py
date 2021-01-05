@@ -2,6 +2,14 @@
 # coding: utf-8
 
 # # Pràctica 2: Neteja i anàlisis de les dades
+# 
+# El següent notebook esta orientat a resoldre la pràctica 2 de l'assignatura *M2.951 - Tipologia i cicle de vida de les dades* del màster en Data Science de la UOC.
+# 
+# ### Nota important
+# 
+# Per poder executar el notebook, es necessari la descàrrega dels fitxers *csv* que conforman el dataset de la pràctica: GlobalTemperatures, GlobalLandTemperaturesByCountry i GlobalLandTemperaturesByCity, i situarlos dins la carpeta **data/** del projecte de github. La raó per la qual no es troben actualment en el projecte de github es el tamany, ja que alguns d'aquests fitxers superen els *25MB* d'espai i Github no permet la seva  càrrega.
+# 
+# ### Llibreries
 
 # In[1]:
 
@@ -26,7 +34,7 @@ get_ipython().run_line_magic('matplotlib', 'inline')
 # 
 # En aquesta pràctica es vol plantejar l'estudi de l'evolució de la temperatura en la superficíe terrestre, per compendre si es cert que hi ha hagut un augment de les temperatures en els ultims anys, i consequentment confirmar que el canvi climatic referent a la temperatura terrestre es real. 
 # 
-# El dataset constà de 4 archius de dades en format *csv*:
+# El dataset constà de 4 fitxers de dades en format *csv*:
 # 
 # 
 # - GlobalTemperatures.csv
@@ -37,7 +45,7 @@ get_ipython().run_line_magic('matplotlib', 'inline')
 # 
 # Per al cas d'estudi plantejat en aquesta pràctica, utilitzarem les dades dels fitxers *GlobalTemperatures*, *GlobalLandTemperaturesByCountry* i *GlobalLandTemperaturesByCity*.
 # 
-# A continuació es detalla la informació que contenen cadascún d'aquests datasets, però primer, es llegirant aquests archius per poder obtindre un millor resum.
+# A continuació es detalla la informació que contenen cadascún d'aquests datasets, però primer, es llegirant aquests fitxers per poder obtindre un millor resum.
 
 # In[2]:
 
@@ -179,19 +187,19 @@ cities_temp.dropna(inplace=True)
 
 # A continuació eliminarem els valors **outliers** dels tres datasets càrregats:
 
-# In[12]:
+# In[11]:
 
 
 global_temp[(np.abs(stats.zscore(global_temp['LandAverageTemperature'])) < 3)]
 
 
-# In[13]:
+# In[12]:
 
 
 countries_temp[(np.abs(stats.zscore(countries_temp['AverageTemperature'])) < 3)]
 
 
-# In[14]:
+# In[13]:
 
 
 cities_temp[(np.abs(stats.zscore(cities_temp['AverageTemperature'])) < 3)]
@@ -199,7 +207,7 @@ cities_temp[(np.abs(stats.zscore(cities_temp['AverageTemperature'])) < 3)]
 
 # En el cas del dataset de temperatures per pais, aprofitem per corretgir alguns del noms utilitzats per a registra el pais:
 
-# In[15]:
+# In[14]:
 
 
 countries_temp['Country'].replace({'Denmark (Europe)':'Denmark','France (Europe)':'France','Netherlands (Europe)':'Netherlands','United Kingdom (Europe)':'United Kingdom'},inplace=True)
@@ -216,7 +224,7 @@ temp_country1=countries_temp.groupby(['Country'])['AverageTemperature'].mean().r
 # - AverageTemperature del dataset GlobalLandTemperaturesByCountry, es carregarà en la variable *country_average_temp*.
 # - LandAverageTemperature del dataset GlobalTemperature, es carregarà en la variable *global_land_average*.
 
-# In[17]:
+# In[15]:
 
 
 country_average_temp=countries_temp.groupby(['dt'])['AverageTemperature'].mean().reset_index()
@@ -235,15 +243,15 @@ cities_temp['Latitude']=cities_temp['Latitude'].str.strip('N')
 cities_temp['Longitude']=cities_temp['Longitude'].str.strip('E')
 
 
-# In[18]:
+# In[17]:
 
 
-cities_average_temp=cities_temp.groupby(['year'])['AverageTemperature'].mean().reset_index()
+cities_average_temp=cities_temp.groupby(['year', 'month'])['AverageTemperature'].mean().reset_index()
 cities_average_temp=cities_temp[['AverageTemperature']]
 cities_average_temp.describe()
 
 
-# In[11]:
+# In[18]:
 
 
 global_temp['dt']=pd.to_datetime(global_temp.dt).dt.strftime('%d/%m/%Y')
@@ -282,8 +290,10 @@ stats.shapiro(cities_average_temp)
 
 
 # ### QQplots
+# 
+# A continuació, utilitzant la llibreria de *statsmodels*, es visualitzaran els qqplots de les diferents variables seleccionades utilitzant la funció *probplot*.
 
-# In[40]:
+# In[23]:
 
 
 ax1 = plt.subplot(221).set_title('Global Average Temperature')
@@ -301,8 +311,10 @@ plt.show()
 # En funció de les  dades  i  de  l’objectiu  de  l’estudi,  aplicar  proves  de  contrast  d’hipòtesis, correlacions, regressions, etc. Aplicar almenys tres mètodes d’anàlisi diferents.
 
 # ### Regressió lineal de les dades globals
+# 
+# A continuació es realitzará un estudi de la regressió lineal de les dades del dataset *GlobalTemperatures* centrat en la variable *AverageTemperature*. 
 
-# In[23]:
+# In[24]:
 
 
 glm_binom = sm.GLM(global_land_average.astype(float), global_temp.astype(float), family=sm.families.Binomial())
@@ -312,9 +324,9 @@ print(res.summary())
 
 # ### Correlació de les dades globals
 # 
-# Aquesta correlació ens permetra observar les relacions entre les variables del dataset de dades globals.
+# Aquesta correlació sobre el dataset *GlobalTemperatures* ens permetra observar les relacions entre les variables que el conformen i obtindre una perspectiva més clara de la estructura d'aquest dataset.
 
-# In[24]:
+# In[25]:
 
 
 sns.heatmap(global_temp.corr())
@@ -325,8 +337,10 @@ sns.heatmap(global_temp.corr())
 # # Representació dels resultats a partir de taules i gràfiques.
 
 # ## Evolució de la temperatura segons l'estació de l'any
+# 
+# Una gràfica interesant a observar es tracta de l'evolució de la temperatura en l'aire de la superficie terrestre al llarg dels anys diferencia per estació de l'any, d'aquesta manera es pot observar si l'augment de les temperatures es estacionari o es continu al llarg de l'any.
 
-# In[25]:
+# In[26]:
 
 
 global_temp = pd.read_csv('../data/GlobalTemperatures.csv')
@@ -381,8 +395,10 @@ legend = plt.legend(loc='center left', bbox_to_anchor=(1, 0.5), frameon=True, bo
 
 
 # ### Top 10 Paisos mes càlids i més freds
+# 
+# Per obtindre una perspectiva global de les temperatures terrestres, es interesant observar el gràfic on s'observen els 10 paisos més càlids i els més freds dels quals es tenen registres. 
 
-# In[26]:
+# In[27]:
 
 
 hot=temp_country1.sort_values(by='AverageTemperature',ascending=False)[:10]
@@ -396,8 +412,10 @@ plt.ylabel('Country')
 
 
 # ### Evolució de les temperatures en diferents països
+# 
+# A continuació, es visualitzará un gràfic de l'evolució de les temperatures en diferents paisos al llarg dels anys desdel 1850. Això ens permetrà entendre si aquest augment de temperatures ve donat a nivell global o es focalitzat en zones mes industrials o avançades.
 
-# In[27]:
+# In[28]:
 
 
 countries=countries_temp.copy()
@@ -418,7 +436,7 @@ abc.plot(ax=ax)
 
 # ### Durant els ultims 50 anys
 
-# In[28]:
+# In[29]:
 
 
 spanish_cities=cities_temp[cities_temp['Country']=='Spain']
@@ -434,7 +452,7 @@ fig.set_size_inches(18,8)
 
 # ### Durant els ultims 20 anys
 
-# In[29]:
+# In[30]:
 
 
 spanish_cities=cities_temp[cities_temp['Country']=='Spain']
